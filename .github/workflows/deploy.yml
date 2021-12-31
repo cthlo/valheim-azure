@@ -1,0 +1,31 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    # Checkout code
+    - uses: actions/checkout@main
+
+    # Log into Azure
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Deploy Bicep file
+    - name: deploy
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+        resourceGroupName: ${{ secrets.AZURE_RG }}
+        template: ./resources.bicep
+        failOnStdErr: true
+        parameters: |
+          valheim_server_password=${{ secrets.VALHEIM_SERVER_PASSWORD }}
+          virtualMachine_sshPublicKey=${{ secrets.SSH_PUBLIC_KEY }}
+          networkSecurityGroup_sshAcceptedSource=${{ secrets.SSH_ACCEPTED_SOURCE }}
+          networkSecurityGroup_valheimAcceptedSources=${{ secrets.VALHEIM_ACCEPTED_SOURCES }}
