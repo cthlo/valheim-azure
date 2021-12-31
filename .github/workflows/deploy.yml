@@ -25,7 +25,7 @@ jobs:
         template: ./resources.bicep
         failOnStdErr: true
         parameters: |
-          valheim_server_password="${{ secrets.VALHEIM_SERVER_PASSWORD }}"
-          virtualMachine_sshPublicKey="${{ secrets.SSH_PUBLIC_KEY }}"
-          networkSecurityGroup_sshAcceptedSource="${{ secrets.SSH_ACCEPTED_SOURCE }}"
-          networkSecurityGroup_valheimAcceptedSources="${{ secrets.VALHEIM_ACCEPTED_SOURCES }}"
+          valheim_server_password='${{ secrets.VALHEIM_SERVER_PASSWORD }}'
+          virtualMachine_sshPublicKey='${{ secrets.SSH_PUBLIC_KEY }}'
+          networkSecurityGroup_sshAcceptedSource='${{ secrets.SSH_ACCEPTED_SOURCE }}'
+          networkSecurityGroup_valheimAcceptedSources='${{ secrets.VALHEIM_ACCEPTED_SOURCES }}'
