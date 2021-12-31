@@ -4,7 +4,7 @@ on:
     branches:
       - master
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
     
@@ -16,16 +16,34 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    # Create parameter values JSON
+    - run: |
+        cat <<EOF > params.json
+        {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "valheim_server_password": {
+              "value": "${{ secrets.VALHEIM_SERVER_PASSWORD }}"
+            },
+            "virtualMachine_sshPublicKey": {
+              "value": "${{ secrets.SSH_PUBLIC_KEY }}"
+            },
+            "networkSecurityGroup_sshAcceptedSource": {
+              "value": "${{ secrets.SSH_ACCEPTED_SOURCE }}"
+            },
+            "networkSecurityGroup_valheimAcceptedSources": {
+              "value": ${{ secrets.VALHEIM_ACCEPTED_SOURCES }}
+            }
+          }
+        }
+        EOF
+
     # Deploy Bicep file
-    - name: deploy
-      uses: azure/arm-deploy@v1
+    - uses: azure/arm-deploy@v1
       with:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
         resourceGroupName: ${{ secrets.AZURE_RG }}
-        template: ./resources.bicep
+        template: resources.bicep
         failOnStdErr: true
-        parameters: |
-          valheim_server_password='${{ secrets.VALHEIM_SERVER_PASSWORD }}'
-          virtualMachine_sshPublicKey='${{ secrets.SSH_PUBLIC_KEY }}'
-          networkSecurityGroup_sshAcceptedSource='${{ secrets.SSH_ACCEPTED_SOURCE }}'
-          networkSecurityGroup_valheimAcceptedSources='${{ secrets.VALHEIM_ACCEPTED_SOURCES }}'
+        parameters: params.json
