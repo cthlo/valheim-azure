@@ -39,7 +39,7 @@ resource virtualMachines_valheim_server_name_resource 'Microsoft.Compute/virtual
         managedDisk: {
           storageAccountType: 'Standard_LRS'
         }
-        deleteOption: 'Detach'
+        deleteOption: 'Delete'
       }
     }
     osProfile: {
