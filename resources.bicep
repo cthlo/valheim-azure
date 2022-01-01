@@ -13,7 +13,7 @@ param virtualMachine_sshPublicKey string = ''
 param publicIPAddress_name string = 'valheim-server-ip'
 param virtualNetwork_name string = 'valheim-vnet'
 param networkSecurityGroup_name string = 'valheim-server-nsg'
-param networkSecurityGroup_sshAcceptedSource string = '' // default: accept no SSH connection
+param networkSecurityGroup_sshAcceptedSources array = [] // default: accept no SSH connection
 param networkSecurityGroup_valheimAcceptedSources array = [] // default: accept all sources
 param networkInterface_name string = 'valheim-server-nic'
 
@@ -37,7 +37,6 @@ resource virtualMachines_valheim_server_name_resource 'Microsoft.Compute/virtual
         createOption: 'FromImage'
         caching: 'ReadWrite'
         managedDisk: {
-          id: resourceId('Microsoft.Compute/disks', '${virtualMachine_name}_osDisk')
           storageAccountType: 'Standard_LRS'
         }
         deleteOption: 'Detach'
@@ -62,7 +61,7 @@ resource virtualMachines_valheim_server_name_resource 'Microsoft.Compute/virtual
           assessmentMode: 'ImageDefault'
         }
       }
-      customData: replace(replace(loadTextContent('cloud-init.cfg'), '{{VALHEIM_SERVER_PASSWORD}}', '${valheim_server_password}'), '{{VALHEIM_WORLD}}', '${valheim_world}')
+      customData: base64(replace(replace(loadTextContent('cloud-init.cfg'), '{{VALHEIM_SERVER_PASSWORD}}', '${valheim_server_password}'), '{{VALHEIM_WORLD}}', '${valheim_world}'))
     }
     networkProfile: {
       networkInterfaces: [
@@ -93,6 +92,19 @@ resource publicIPAddress 'Microsoft.Network/publicIPAddresses@2021-05-01' = {
   }
 }
 
+var subnet_name = 'default'
+var subnet_properties = {
+  addressPrefix: '10.0.0.0/24'
+  delegations: []
+  privateEndpointNetworkPolicies: 'Enabled'
+  privateLinkServiceNetworkPolicies: 'Enabled'
+}
+resource virtualNetwork_subnet_default 'Microsoft.Network/virtualNetworks/subnets@2021-05-01' = {
+  parent: virtualNetwork
+  name: subnet_name
+  properties: subnet_properties
+}
+
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: virtualNetwork_name
   location: resourceGroup().location
@@ -104,13 +116,8 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
     }
     subnets: [
       {
-        name: 'default'
-        properties: {
-          addressPrefix: '10.0.0.0/24'
-          delegations: []
-          privateEndpointNetworkPolicies: 'Enabled'
-          privateLinkServiceNetworkPolicies: 'Enabled'
-        }
+        name: subnet_name
+        properties: subnet_properties
       }
     ]
     virtualNetworkPeerings: []
@@ -123,13 +130,13 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
   location: resourceGroup().location
   properties: {
     securityRules: [
-      empty(networkSecurityGroup_sshAcceptedSource) ? {} : {
+      empty(networkSecurityGroup_sshAcceptedSources) ? {} : {
         name: 'SSH'
         properties: {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '22'
-          sourceAddressPrefix: networkSecurityGroup_sshAcceptedSource
+          sourceAddressPrefixes: networkSecurityGroup_sshAcceptedSources
           destinationAddressPrefix: '*'
           access: 'Allow'
           priority: 100
@@ -142,8 +149,8 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
           protocol: 'Udp'
           sourcePortRange: '*'
           destinationPortRange: '2456'
-          sourceAddressPrefix: empty(networkSecurityGroup_valheimAcceptedSources) ? '*' : ''
-          sourceAddressPrefixes: empty(networkSecurityGroup_valheimAcceptedSources) ? [] : networkSecurityGroup_valheimAcceptedSources
+          sourceAddressPrefix: empty(networkSecurityGroup_valheimAcceptedSources) ? '*' : null
+          sourceAddressPrefixes: empty(networkSecurityGroup_valheimAcceptedSources) ? null : networkSecurityGroup_valheimAcceptedSources
           destinationAddressPrefix: '*'
           access: 'Allow'
           priority: 110
@@ -168,7 +175,7 @@ resource networkInterface 'Microsoft.Network/networkInterfaces@2021-05-01' = {
             id: publicIPAddress.id
           }
           subnet: {
-            id: virtualNetwork.id
+            id: virtualNetwork_subnet_default.id
           }
           primary: true
           privateIPAddressVersion: 'IPv4'
