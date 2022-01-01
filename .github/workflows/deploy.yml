@@ -33,10 +33,10 @@ jobs:
               "value": "${{ secrets.SSH_PUBLIC_KEY }}"
             },
             "networkSecurityGroup_sshAcceptedSources": {
-              "value": ${SSH_ACCEPTED_SOURCES:-'[]'}
+              "value": ${SSH_ACCEPTED_SOURCES:-[]}
             },
             "networkSecurityGroup_valheimAcceptedSources": {
-              "value": ${VALHEIM_ACCEPTED_SOURCES:-'[]'}
+              "value": ${VALHEIM_ACCEPTED_SOURCES:-[]}
             }
           }
         }
