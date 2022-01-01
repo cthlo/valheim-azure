@@ -17,7 +17,10 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     # Create parameter values JSON
-    - run: |
+    - env:
+        SSH_ACCEPTED_SOURCES: ${{ secrets.SSH_ACCEPTED_SOURCES }}
+        VALHEIM_ACCEPTED_SOURCES: ${{ secrets.VALHEIM_ACCEPTED_SOURCES }}
+      run: |
         cat <<EOF > params.json
         {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
@@ -29,11 +32,11 @@ jobs:
             "virtualMachine_sshPublicKey": {
               "value": "${{ secrets.SSH_PUBLIC_KEY }}"
             },
-            "networkSecurityGroup_sshAcceptedSource": {
-              "value": "${{ secrets.SSH_ACCEPTED_SOURCE }}"
+            "networkSecurityGroup_sshAcceptedSources": {
+              "value": ${SSH_ACCEPTED_SOURCES:-'[]'}
             },
             "networkSecurityGroup_valheimAcceptedSources": {
-              "value": ${{ secrets.VALHEIM_ACCEPTED_SOURCES }}
+              "value": ${VALHEIM_ACCEPTED_SOURCES:-'[]'}
             }
           }
         }
