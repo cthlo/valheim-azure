@@ -13,8 +13,8 @@ param virtualMachine_sshPublicKey string = ''
 param publicIPAddress_name string = 'valheim-server-ip'
 param virtualNetwork_name string = 'valheim-vnet'
 param networkSecurityGroup_name string = 'valheim-server-nsg'
-param networkSecurityGroup_sshAcceptedSources array = [] // default: no security rule set for port 22
-param networkSecurityGroup_valheimAcceptedSources array = [] // default: security rule set to allow any sources
+param networkSecurityGroup_sshAcceptedSources array = [] // default: will not add security rule for port 22
+param networkSecurityGroup_valheimAcceptedSources array = [] // default: will add security rule to allow any sources
 param networkInterface_name string = 'valheim-server-nic'
 
 resource virtualMachines_valheim_server_name_resource 'Microsoft.Compute/virtualMachines@2021-07-01' = {
