@@ -13,8 +13,8 @@ param virtualMachine_sshPublicKey string = ''
 param publicIPAddress_name string = 'valheim-server-ip'
 param virtualNetwork_name string = 'valheim-vnet'
 param networkSecurityGroup_name string = 'valheim-server-nsg'
-param networkSecurityGroup_sshAcceptedSources array = [] // default: deny all sources
-param networkSecurityGroup_valheimAcceptedSources array = [] // default: allow all sources
+param networkSecurityGroup_sshAcceptedSources array = [] // default: no security rule set for port 22
+param networkSecurityGroup_valheimAcceptedSources array = [] // default: security rule set to allow any sources
 param networkInterface_name string = 'valheim-server-nic'
 
 resource virtualMachines_valheim_server_name_resource 'Microsoft.Compute/virtualMachines@2021-07-01' = {
@@ -129,21 +129,21 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
   name: networkSecurityGroup_name
   location: resourceGroup().location
   properties: {
-    securityRules: [
+    securityRules: concat(empty(networkSecurityGroup_sshAcceptedSources) ? [] : [
       {
         name: 'SSH'
         properties: {
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '22'
-          sourceAddressPrefix: empty(networkSecurityGroup_sshAcceptedSources) ? '*' : null
-          sourceAddressPrefixes: empty(networkSecurityGroup_sshAcceptedSources) ? null : networkSecurityGroup_sshAcceptedSources
+          sourceAddressPrefixes: networkSecurityGroup_sshAcceptedSources
           destinationAddressPrefix: '*'
-          access: empty(networkSecurityGroup_sshAcceptedSources) ? 'Deny' : 'Allow'
+          access: 'Allow'
           priority: 100
           direction: 'Inbound'
         }
       }
+    ], [
       {
         name: 'ValheimServer'
         properties: {
@@ -158,7 +158,7 @@ resource networkSecurityGroup 'Microsoft.Network/networkSecurityGroups@2021-05-0
           direction: 'Inbound'
         }
       }
-    ]
+    ])
   }
 }
 
